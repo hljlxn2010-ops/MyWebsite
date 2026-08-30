@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>饼干Suzuki 的游戏小屋</title>
+<style>
+:root {
+  --primary: #4A90D9;
+  --primary-light: #5B8DEF;
+  --primary-dark: #3A7BC8;
+  --bg-deep: #0f1a2e;
+  --bg-card: rgba(255,255,255,0.95);
+  --text-dark: #2d3748;
+  --text-mid: #4a5568;
+  --text-light: #718096;
+  --border: #e2e8f0;
+  --shadow: 0 4px 20px rgba(0,0,0,0.15);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.2);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: var(--text-dark); min-height: 100vh; background: var(--bg-deep);
+  position: relative; overflow-x: hidden;
+}
+#bg-layer {
+  position: fixed; inset:0; z-index:0; background: var(--bg-deep);
+  transition: background-image 0.5s; background-size: cover; background-position: center;
+}
+#bg-layer::after { content:''; position:absolute; inset:0; background: rgba(15,26,46,0.7); }
+.game-particles { position: fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+.particle {
+  position: absolute; opacity: 0.08; animation: float 20s infinite ease-in-out;
+  font-size: 24px; color: var(--primary-light);
+}
+@keyframes float {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-40px) rotate(180deg); }
+}
+.wrap { position:relative; z-index:2; max-width:1200px; margin:0 auto; padding:0 20px; }
+
+/* Navbar */
+.navbar {
+  position: sticky; top:0; z-index:100;
+  background: rgba(15,26,46,0.85); backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.navbar-inner { display:flex; align-items:center; justify-content:space-between; height:64px; }
+.logo { font-size:1.4rem; font-weight:800; color:var(--primary-light); letter-spacing:1px; }
+.nav-links { display:flex; gap:8px; }
+.nav-links a {
+  padding:8px 18px; border-radius:var(--radius-sm); color:#cbd5e0;
+  text-decoration:none; font-size:0.95rem; font-weight:500;
+  transition: var(--transition); position:relative;
+}
+.nav-links a:hover, .nav-links a.active { color:#fff; background: rgba(74,144,217,0.2); }
+.nav-links a.active::after {
+  content:''; position:absolute; bottom:2px; left:18px; right:18px;
+  height:2px; background: var(--primary); border-radius:2px;
+}
+.mobile-menu-btn { display:none; background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer; }
+
+/* Hero */
+.hero { text-align:center; padding:60px 20px 40px; }
+.avatar-wrap { position:relative; display:inline-block; margin-bottom:20px; }
+.avatar {
+  width:140px; height:140px; border-radius:50%; object-fit:cover;
+  border:4px solid rgba(255,255,255,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.avatar-upload {
+  position:absolute; bottom:4px; right:4px; width:36px; height:36px; border-radius:50%;
+  background: var(--primary); color:#fff; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3); font-size:1rem; transition: var(--transition);
+}
+.avatar-upload:hover { transform:scale(1.1); background:var(--primary-dark); }
+.nickname { font-size:2.4rem; font-weight:800; color:#fff; text-shadow: 0 2px 10px rgba(0,0,0,0.3); margin-bottom:10px; letter-spacing:2px; }
+.bio { font-size:1.1rem; color: rgba(255,255,255,0.75); max-width:500px; margin:0 auto 24px; line-height:1.6; }
+.bio[contenteditable="true"] { outline:2px dashed rgba(255,255,255,0.3); border-radius:8px; padding:4px 12px; background: rgba(255,255,255,0.05); }
+.socials { display:flex; gap:16px; justify-content:center; }
+.social-btn {
+  width:44px; height:44px; border-radius:50%; background: rgba(255,255,255,0.1); color:#fff;
+  display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:1.1rem;
+  transition: var(--transition); border: 1px solid rgba(255,255,255,0.15);
+}
+.social-btn:hover { background: var(--primary); transform: translateY(-3px); }
+.bg-upload-btn {
+  margin-top:20px; padding:8px 20px; border-radius:var(--radius-sm);
+  background: rgba(255,255,255,0.1); color:rgba(255,255,255,0.8);
+  border:1px solid rgba(255,255,255,0.2); cursor:pointer; font-size:0.9rem; transition: var(--transition);
+}
+.bg-upload-btn:hover { background: rgba(255,255,255,0.2); color:#fff; }
+
+/* Section */
+.section { display:none; animation: fadeIn 0.4s ease; }
+.section.active { display:block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.section-title { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+.section-title .icon { font-size:1.3rem; }
+.section-desc { color: rgba(255,255,255,0.6); margin-bottom:24px; font-size:0.95rem; }
+.card-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:20px; }
+.card {
+  background: var(--bg-card); border-radius: var(--radius); overflow:hidden;
+  box-shadow: var(--shadow); transition: var(--transition); cursor:pointer; position:relative;
+}
+.card:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
+.card-img-wrap { position:relative; height:160px; overflow:hidden; }
+.card-img { width:100%; height:100%; object-fit:cover; transition: transform 0.5s; }
+.card:hover .card-img { transform: scale(1.05); }
+.card-body { padding:16px; }
+.card-title { font-size:1.1rem; font-weight:700; color:var(--text-dark); margin-bottom:4px; }
+.card-sub { font-size:0.85rem; color:var(--text-light); }
+.card-meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.tag {
+  padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;
+  background: rgba(74,144,217,0.1); color: var(--primary); border:1px solid rgba(74,144,217,0.2);
+}
+.score-badge {
+  position:absolute; top:12px; right:12px; width:44px; height:44px; border-radius:50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light)); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem;
+  box-shadow:0 4px 12px rgba(74,144,217,0.4);
+}
+
+/* Detail Page */
+.detail-page { display:none; animation: fadeIn 0.3s; }
+.detail-page.active { display:block; }
+.detail-header {
+  display:flex; gap:24px; align-items:flex-start; margin-bottom:32px;
+  background: var(--bg-card); border-radius: var(--radius); padding:24px; box-shadow: var(--shadow);
+}
+.detail-avatar {
+  width:100px; height:100px; border-radius:50%; object-fit:cover;
+  border:3px solid var(--primary); flex-shrink:0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+.detail-info h2 { font-size:1.5rem; margin-bottom:6px; }
+.detail-info .sub { color:var(--text-light); font-size:0.95rem; }
+.back-btn {
+  display:inline-flex; align-items:center; gap:6px; margin-bottom:20px;
+  padding:8px 18px; border-radius:var(--radius-sm); background: rgba(255,255,255,0.1);
+  color:#fff; border:none; cursor:pointer; font-size:0.9rem; transition: var(--transition);
+}
+.back-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* Toolbar */
+.toolbar {
+  display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+  margin-bottom:20px; padding:16px; background: rgba(255,255,255,0.08);
+  border-radius: var(--radius); backdrop-filter: blur(10px);
+}
+.toolbar select, .toolbar input {
+  padding:8px 14px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.2); color:#fff; font-size:0.9rem; outline:none;
+}
+.toolbar select option { background:#1a2a4a; color:#fff; }
+.toolbar input::placeholder { color:rgba(255,255,255,0.4); }
+.btn-primary {
+  padding:8px 20px; border-radius:var(--radius-sm); border:none;
+  background: var(--primary); color:#fff; font-size:0.9rem; font-weight:600;
+  cursor:pointer; transition: var(--transition); display:inline-flex; align-items:center; gap:6px;
+}
+.btn-primary:hover { background: var(--primary-dark); transform:translateY(-2px); }
+.btn-secondary {
+  padding:8px 20px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1); color:#fff; font-size:0.9rem;
+  cursor:pointer; transition: var(--transition);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+/* Pagination */
+.pagination { display:flex; gap:8px; justify-content:center; margin-top:28px; padding-bottom:40px; }
+.page-btn {
+  min-width:36px; height:36px; border-radius:var(--radius-sm);
+  border:1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color:#fff;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:0.9rem; transition: var(--transition);
+}
+.page-btn:hover, .page-btn.active { background: var(--primary); border-color:var(--primary); }
+.page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* Modal */
+.modal-overlay {
+  position:fixed; inset:0; z-index:200; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px); display:none; align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.active { display:flex; }
+.modal {
+  background: #fff; border-radius: var(--radius); max-width:560px; width:100%;
+  max-height:90vh; overflow-y:auto; box-shadow: var(--shadow-hover); animation: modalIn 0.3s ease;
+}
+@keyframes modalIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+.modal-header { padding:20px 24px; border-bottom:1px solid var(--border); }
+.modal-header h3 { font-size:1.2rem; color:var(--text-dark); }
+.modal-body { padding:24px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:0.85rem; font-weight:600; color:var(--text-mid); margin-bottom:6px; }
+.form-group input, .form-group textarea, .form-group select {
+  width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  font-size:0.95rem; color:var(--text-dark); outline:none; transition: var(--transition); font-family:inherit;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(74,144,217,0.15); }
+.form-group textarea { min-height:80px; resize:vertical; }
+.img-preview {
+  width:100%; height:140px; border-radius:var(--radius-sm); object-fit:cover;
+  margin-top:8px; border:2px dashed var(--border); background:#f7fafc; display:none;
+}
+.img-preview.show { display:block; }
+.upload-area {
+  border:2px dashed var(--border); border-radius:var(--radius-sm); padding:24px;
+  text-align:center; color:var(--text-light); cursor:pointer; transition: var(--transition); background:#f7fafc;
+}
+.upload-area:hover { border-color:var(--primary); color:var(--primary); background: rgba(74,144,217,0.05); }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+.btn-cancel { padding:8px 18px; border-radius:var(--radius-sm); border:1px solid var(--border); background:#fff; color:var(--text-mid); cursor:pointer; font-size:0.9rem; }
+.btn-cancel:hover { background:#f7fafc; }
+
+/* Award List */
+.award-section { margin-bottom:32px; }
+.award-title { font-size:1.2rem; font-weight:700; color:#fff; margin-bottom:16px; padding-left:12px; border-left:4px solid var(--primary); }
+.award-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:16px; }
+.award-card {
+  background: var(--bg-card); border-radius: var(--radius); overflow:hidden;
+  box-shadow: var(--shadow); transition: var(--transition); cursor:pointer;
+}
+.award-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.award-card .award-img { width:100%; height:130px; object-fit:cover; }
+.award-card .award-body { padding:14px; }
+.award-card .award-name { font-weight:700; color:var(--text-dark); margin-bottom:2px; }
+.award-card .award-prize { font-size:0.85rem; color:var(--primary); font-weight:600; }
+
+/* Character */
+.char-tabs { display:flex; gap:8px; margin-bottom:20px; }
+.char-tab {
+  padding:10px 24px; border-radius:var(--radius-sm); border:none;
+  background: rgba(255,255,255,0.08); color:rgba(255,255,255,0.7);
+  cursor:pointer; font-size:0.95rem; font-weight:600; transition: var(--transition);
+}
+.char-tab.active { background: var(--primary); color:#fff; }
+.char-tab:hover:not(.active) { background: rgba(255,255,255,0.15); color:#fff; }
+
+/* Footer */
+footer { text-align:center; padding:40px 20px; color:rgba(255,255,255,0.4); font-size:0.85rem; border-top:1px solid rgba(255,255,255,0.06); margin-top:40px; }
+
+/* Responsive */
+@media (max-width:768px) {
+  .nav-links { display:none; position:absolute; top:64px; left:0; right:0;
+    background: rgba(15,26,46,0.95); backdrop-filter:blur(20px);
+    flex-direction:column; padding:12px 20px; gap:4px; border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .nav-links.open { display:flex; }
+  .nav-links a { padding:12px; border-radius:var(--radius-sm); }
+  .mobile-menu-btn { display:block; }
+  .nickname { font-size:1.8rem; }
+  .detail-header { flex-direction:column; align-items:center; text-align:center; }
+  .toolbar { flex-direction:column; align-items:stretch; }
+  .card-grid { grid-template-columns:1fr; }
+}
+
+.empty-state { text-align:center; padding:60px 20px; color:rgba(255,255,255,0.5); }
+.empty-state .icon { font-size:3rem; margin-bottom:12px; opacity:0.6; }
+
+.detail-cover { width:100%; max-height:300px; object-fit:cover; border-radius:var(--radius); margin-bottom:20px; }
+.detail-row { display:flex; gap:20px; margin-bottom:12px; flex-wrap:wrap; }
+.detail-label { font-weight:600; color:var(--text-mid); min-width:80px; }
+.detail-value { color:var(--text-dark); }
+.detail-score-big {
+  width:80px; height:80px; border-radius:50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light)); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:800;
+  box-shadow:0 6px 20px rgba(74,144,217,0.4);
+}
+.detail-actions { display:flex; gap:10px; margin-top:20px; }
+
+.toast {
+  position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px);
+  background: var(--text-dark); color:#fff; padding:12px 24px; border-radius:var(--radius-sm);
+  font-size:0.9rem; z-index:300; opacity:0; transition: all 0.3s; pointer-events:none;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+.sub-nav { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.sub-nav a {
+  padding:6px 16px; border-radius:var(--radius-sm); color:rgba(255,255,255,0.7);
+  text-decoration:none; font-size:0.9rem; background: rgba(255,255,255,0.08); transition: var(--transition);
+}
+.sub-nav a:hover, .sub-nav a.active { background: var(--primary); color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="bg-layer"></div>
+<div class="game-particles" id="particles"></div>
+
+<div class="wrap">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner wrap">
+      <div class="logo">🎮 饼干小屋</div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <div class="nav-links" id="navLinks">
+        <a href="#" class="active" onclick="showSection('home', this)">首页</a>
+        <a href="#" onclick="showSection('binggn', this)">饼GN</a>
+        <a href="#" onclick="showSection('bingga', this)">饼GA</a>
+        <a href="#" onclick="showSection('chars', this)">人物收藏</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Home / Hero -->
+  <section id="home" class="section active">
+    <div class="hero">
+      <div class="avatar-wrap">
+        <img id="mainAvatar" class="avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=biscuit" alt="头像">
+        <button class="avatar-upload" onclick="document.getElementById('avatarInput').click()" title="更换头像">📷</button>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadAvatar(this, 'mainAvatar')">
+      </div>
+      <h1 class="nickname">饼干Suzuki</h1>
+      <p class="bio" id="userBio" contenteditable="false" onblur="saveBio()">这里是饼干的游戏小屋！记录我的游戏生涯 🎮</p>
+      <button class="btn-secondary" style="margin-bottom:16px;" onclick="toggleEditBio()" id="editBioBtn">✏️ 编辑简介</button>
+      <div class="socials">
+        <a class="social-btn" href="https://space.bilibili.com/14477577?spm_id_from=333.1007.0.0" target="_blank" title="Bilibili">📺</a>
+        <a class="social-btn" href="https://wpa.qq.com/msgrd?v=3&uin=858789777" target="_blank" title="QQ: 858789777">💬</a>
+      </div>
+      <button class="bg-upload-btn" onclick="document.getElementById('bgInput').click()">🖼️ 更换背景图片</button>
+      <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="uploadBg(this)">
+    </div>
+    <div style="margin-top:20px;">
+      <h2 class="section-title"><span class="icon">🎯</span>最近记录</h2>
+      <p class="section-desc">饼GN 中最新添加的游戏</p>
+      <div class="card-grid" id="homeRecentGames"></div>
+    </div>
+    <div style="margin-top:32px;">
+      <h2 class="section-title"><span class="icon">🏆</span>最新奖项</h2>
+      <p class="section-desc">饼GA 中最新颁发的奖项</p>
+      <div class="card-grid" id="homeRecentAwards"></div>
+    </div>
+  </section>
+
+  <!-- 饼GN -->
+  <section id="binggn" class="section">
+    <div style="padding-top:30px;">
+      <h2 class="section-title"><span class="icon">🎯</span>饼GN</h2>
+      <p class="section-desc">我的游戏记录与评分</p>
+      <div class="toolbar">
+        <select id="gnFilterType" onchange="updateGnFilter()">
+          <option value="">全部分类</option>
+          <option value="dev">按开发商</option>
+          <option value="ip">按所属IP</option>
+          <option value="tag">按游戏标签</option>
+          <option value="year">按发售年份</option>
+        </select>
+        <select id="gnFilterValue" onchange="renderGnList()">
+          <option value="">选择分类值</option>
+        </select>
+        <select id="gnSort" onchange="renderGnList()">
+          <option value="score-desc">分数从高到低</option>
+          <option value="score-asc">分数从低到高</option>
+          <option value="time-desc">添加时间从新到旧</option>
+          <option value="time-asc">添加时间从旧到新</option>
+        </select>
+        <input type="text" id="gnSearch" placeholder="搜索游戏..." oninput="renderGnList()">
+        <button class="btn-primary" onclick="openGnModal()">➕ 添加游戏</button>
+      </div>
+      <div class="card-grid" id="gnList"></div>
+      <div class="pagination" id="gnPagination"></div>
+    </div>
+  </section>
+
+  <!-- 饼GN Detail -->
+  <div id="gnDetail" class="detail-page">
+    <div style="padding-top:30px;">
+      <button class="back-btn" onclick="backToGnList()">← 返回列表</button>
+      <div class="detail-header">
+        <img id="gnDetailImg" class="detail-avatar" src="" alt="">
+        <div class="detail-info">
+          <h2 id="gnDetailName"></h2>
+          <p class="sub" id="gnDetailNameEn"></p>
+          <div style="margin-top:12px;">
+            <div class="detail-row"><span class="detail-label">发售日期:</span><span class="detail-value" id="gnDetailDate"></span></div>
+            <div class="detail-row"><span class="detail-label">开发商:</span><span class="detail-value" id="gnDetailDev"></span></div>
+            <div class="detail-row"><span class="detail-label">所属IP:</span><span class="detail-value" id="gnDetailIp"></span></div>
+            <div class="detail-row"><span class="detail-label">标签:</span><span class="detail-value" id="gnDetailTags"></span></div>
+          </div>
+        </div>
+        <div class="detail-score-big" id="gnDetailScore"></div>
+      </div>
+      <div style="background:var(--bg-card); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow);">
+        <h3 style="margin-bottom:12px; color:var(--text-dark);">游戏简评</h3>
+        <p id="gnDetailReview" style="color:var(--text-mid); line-height:1.8;"></p>
+        <div class="detail-actions">
+          <button class="btn-primary" onclick="editCurrentGn()">✏️ 编辑</button>
+          <button class="btn-secondary" style="color:var(--text-mid); border-color:var(--border);" onclick="deleteCurrentGn()">🗑️ 删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 饼GA -->
+  <section id="bingga" class="section">
+    <div style="padding-top:30px;">
+      <h2 class="section-title"><span class="icon">🏆</span>饼GA</h2>
+      <p class="section-desc">年度游戏大奖评选</p>
+      <div class="toolbar">
+        <button class="btn-primary" onclick="openGaListModal()">➕ 新建奖项列表</button>
+      </div>
+      <div id="gaContainer"></div>
+    </div>
+  </section>
+
+  <!-- 饼GA Detail -->
+  <div id="gaDetail" class="detail-page">
+    <div style="padding-top:30px;">
+      <button class="back-btn" onclick="backToGaList()">← 返回奖项列表</button>
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+        <img id="gaDetailImg" class="detail-avatar" src="" alt="" style="width:80px; height:80px;">
+        <div>
+          <h2 style="color:#fff;" id="gaDetailGame"></h2>
+          <p style="color:rgba(255,255,255,0.6);" id="gaDetailGameEn"></p>
+          <p style="color:var(--primary); font-weight:700; margin-top:4px;" id="gaDetailPrize"></p>
+        </div>
+      </div>
+      <div style="background:var(--bg-card); border-radius:var(--radius); padding:24px;">
+        <div class="detail-row"><span class="detail-label">饼GN分数:</span><span class="detail-value" id="gaDetailScore"></span></div>
+        <div class="detail-actions" style="margin-top:20px;">
+          <button class="btn-primary" onclick="editCurrentGa()">✏️ 编辑</button>
+          <button class="btn-secondary" style="color:var(--text-mid);" onclick="deleteCurrentGa()">🗑️ 删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 人物收藏 -->
+  <section id="chars" class="section">
+    <div style="padding-top:30px;">
+      <h2 class="section-title"><span class="icon">👤</span>人物收藏</h2>
+      <p class="section-desc">我喜爱的人物角色收藏</p>
+      <div class="char-tabs">
+        <button class="char-tab active" onclick="switchCharTab('2d', this)">二次元人物</button>
+        <button class="char-tab" onclick="switchCharTab('3d', this)">三次元人物</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" id="charSearch" placeholder="搜索人物..." oninput="renderCharList()">
+        <button class="btn-primary" onclick="openCharModal()">➕ 添加人物</button>
+      </div>
+      <div class="card-grid" id="charList"></div>
+      <div class="pagination" id="charPagination"></div>
+    </div>
+  </section>
+
+  <!-- 人物 Detail -->
+  <div id="charDetail" class="detail-page">
+    <div style="padding-top:30px;">
+      <button class="back-btn" onclick="backToCharList()">← 返回人物列表</button>
+      <div class="detail-header">
+        <img id="charDetailImg" class="detail-avatar" src="" alt="">
+        <div class="detail-info">
+          <h2 id="charDetailName"></h2>
+          <p class="sub" id="charDetailNameEn"></p>
+          <div style="margin-top:12px;" id="charDetailExtra"></div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow);">
+        <h3 style="margin-bottom:12px; color:var(--text-dark);">人物简介</h3>
+        <p id="charDetailBio" style="color:var(--text-mid); line-height:1.8;"></p>
+        <div class="detail-actions" style="margin-top:20px;">
+          <button class="btn-primary" onclick="editCurrentChar()">✏️ 编辑</button>
+          <button class="btn-secondary" style="color:var(--text-mid);" onclick="deleteCurrentChar()">🗑️ 删除</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 BISCUIT SUZUKI · 饼干的游戏小屋 🎮</p>
+    <p style="margin-top:6px; font-size:0.75rem;">Made with ❤️ for gaming</p>
+  </footer>
+</div>
+
+<!-- Modal: 添加/编辑游戏 -->
+<div class="modal-overlay" id="gnModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="gnModalTitle">添加游戏</h3></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>游戏封面</label>
+        <div class="upload-area" onclick="document.getElementById('gnImgInput').click()">
+          <div>📷 点击上传图片</div>
+          <div style="font-size:0.8rem; margin-top:4px;">支持 JPG, PNG</div>
+        </div>
+        <input type="file" id="gnImgInput" accept="image/*" style="display:none" onchange="previewImg(this, 'gnImgPreview')">
+        <img id="gnImgPreview" class="img-preview" alt="">
+      </div>
+      <div class="form-group"><label>游戏中文名 *</label><input type="text" id="gnName" placeholder="例如：塞尔达传说"></div>
+      <div class="form-group"><label>游戏外文名</label><input type="text" id="gnNameEn" placeholder="例如：The Legend of Zelda"></div>
+      <div class="form-group"><label>发售日期</label><input type="date" id="gnDate"></div>
+      <div class="form-group"><label>开发商</label><input type="text" id="gnDev" placeholder="例如：Nintendo"></div>
+      <div class="form-group"><label>所属IP</label><input type="text" id="gnIp" placeholder="例如：塞尔达传说"></div>
+      <div class="form-group"><label>游戏标签（用逗号分隔）</label><input type="text" id="gnTags" placeholder="例如：RPG, 开放世界, 冒险"></div>
+      <div class="form-group"><label>评分 (0-100)</label><input type="number" id="gnScore" min="0" max="100" placeholder="85"></div>
+      <div class="form-group"><label>游戏简评</label><textarea id="gnReview" placeholder="写下你对这款游戏的评价..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('gnModal')">取消</button>
+      <button class="btn-primary" onclick="saveGn()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 添加/编辑奖项 -->
+<div class="modal-overlay" id="gaModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="gaModalTitle">添加奖项</h3></div>
+    <div class="modal-body">
+      <div class="form-group"><label>所属奖项列表</label><select id="gaListSelect"></select></div>
+      <div class="form-group">
+        <label>游戏封面</label>
+        <div class="upload-area" onclick="document.getElementById('gaImgInput').click()">
+          <div>📷 点击上传图片</div>
+        </div>
+        <input type="file" id="gaImgInput" accept="image/*" style="display:none" onchange="previewImg(this, 'gaImgPreview')">
+        <img id="gaImgPreview" class="img-preview" alt="">
+      </div>
+      <div class="form-group"><label>游戏中文名 *</label><input type="text" id="gaName" placeholder="游戏中文名"></div>
+      <div class="form-group"><label>游戏外文名</label><input type="text" id="gaNameEn" placeholder="游戏外文名"></div>
+      <div class="form-group"><label>奖项名称 *</label><input type="text" id="gaPrize" placeholder="例如：年度最佳游戏"></div>
+      <div class="form-group"><label>饼GN分数</label><input type="number" id="gaScore" min="0" max="100" placeholder="参考分数"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('gaModal')">取消</button>
+      <button class="btn-primary" onclick="saveGa()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 新建奖项列表 -->
+<div class="modal-overlay" id="gaListModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><h3>新建奖项列表</h3></div>
+    <div class="modal-body">
+      <div class="form-group"><label>列表名称 *</label><input type="text" id="gaListName" placeholder="例如：2024年度饼GA"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('gaListModal')">取消</button>
+      <button class="btn-primary" onclick="createGaList()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 添加/编辑人物 -->
+<div class="modal-overlay" id="charModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="charModalTitle">添加人物</h3></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>人物头像</label>
+        <div class="upload-area" onclick="document.getElementById('charImgInput').click()">
+          <div>📷 点击上传图片</div>
+        </div>
+        <input type="file" id="charImgInput" accept="image/*" style="display:none" onchange="previewImg(this, 'charImgPreview')">
+        <img id="charImgPreview" class="img-preview" alt="">
+      </div>
+      <div class="form-group"><label>人物中文名 *</label><input type="text" id="charName" placeholder="中文名"></div>
+      <div class="form-group"><label>人物外文名</label><input type="text" id="charNameEn" placeholder="外文名"></div>
+      <div class="form-group"><label>类型</label>
+        <select id="charType" onchange="toggleCharFields()">
+          <option value="2d">二次元人物</option>
+          <option value="3d">三次元人物</option>
+        </select>
+      </div>
+      <div class="form-group" id="charCvGroup"><label>角色声优</label><input type="text" id="charCv" placeholder="声优姓名"></div>
+      <div class="form-group" id="charSourceGroup"><label>人物出处</label><input type="text" id="charSource" placeholder="出自哪部作品"></div>
+      <div class="form-group" id="charWorksGroup" style="display:none;"><label>代表作</label><input type="text" id="charWorks" placeholder="代表作品"></div>
+      <div class="form-group"><label>人物简介</label><textarea id="charBio" placeholder="人物简介..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('charModal')">取消</button>
+      <button class="btn-primary" onclick="saveChar()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== DATA STORE =====================
+const STORAGE_KEYS = {
+  games: 'biscuit_games',
+  awards: 'biscuit_awards',
+  awardLists: 'biscuit_award_lists',
+  chars: 'biscuit_chars',
+  settings: 'biscuit_settings'
+};
+
+function getData(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; }
+  catch(e) { return []; }
+}
+function setData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.settings)) || {}; }
+  catch(e) { return {}; }
+}
+function setSettings(s) { localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(s)); }
+
+function initData() {
+  if (!localStorage.getItem(STORAGE_KEYS.games)) {
+    setData(STORAGE_KEYS.games, [
+      { id:1, name:'塞尔达传说：王国之泪', nameEn:'The Legend of Zelda: Tears of the Kingdom', date:'2023-05-12', dev:'Nintendo', ip:'塞尔达传说', tags:['RPG','开放世界','冒险'], score:98, review:'神作，自由度极高，建造系统令人着迷。', img:'', added:Date.now() },
+      { id:2, name:'艾尔登法环', nameEn:'Elden Ring', date:'2022-02-25', dev:'FromSoftware', ip:'艾尔登法环', tags:['魂类','开放世界','动作'], score:96, review:'宫崎英高的集大成之作，地图设计精妙绝伦。', img:'', added:Date.now()-10000 },
+      { id:3, name:'女神异闻录5 皇家版', nameEn:'Persona 5 Royal', date:'2019-10-31', dev:'Atlus', ip:'女神异闻录', tags:['JRPG','回合制','剧情'], score:95, review:'风格化演出的巅峰，音乐与UI设计无可挑剔。', img:'', added:Date.now()-20000 },
+      { id:4, name:'博德之门3', nameEn:"Baldur's Gate 3", date:'2023-08-03', dev:'Larian Studios', ip:'博德之门', tags:['CRPG','回合制','剧情'], score:97, review:'CRPG的复兴，选择影响深远，角色塑造丰满。', img:'', added:Date.now()-30000 },
+      { id:5, name:'空洞骑士', nameEn:'Hollow Knight', date:'2017-02-24', dev:'Team Cherry', ip:'空洞骑士', tags:['类银河恶魔城','动作','独立'], score:94, review:'独立游戏的标杆，氛围营造与战斗手感俱佳。', img:'', added:Date.now()-40000 },
+    ]);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.awardLists)) {
+    setData(STORAGE_KEYS.awardLists, [
+      { id:1, name:'2024年度饼GA' },
+      { id:2, name:'2023年度饼GA' }
+    ]);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.awards)) {
+    setData(STORAGE_KEYS.awards, [
+      { id:1, listId:1, name:'最终幻想7 重生', nameEn:'Final Fantasy VII Rebirth', prize:'年度最佳RPG', score:95, img:'' },
+      { id:2, listId:1, name:'宇宙机器人', nameEn:'Astro Bot', prize:'年度最佳游戏', score:96, img:'' },
+      { id:3, listId:2, name:'博德之门3', nameEn:"Baldur's Gate 3", prize:'年度最佳游戏', score:97, img:'' },
+    ]);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.chars)) {
+    setData(STORAGE_KEYS.chars, [
+      { id:1, name:'林克', nameEn:'Link', type:'2d', cv:'无', source:'塞尔达传说', bio:'海拉鲁的勇者，沉默寡言但实力强大。', img:'', added:Date.now() },
+      { id:2, name:'雨宫莲', nameEn:'Ren Amamiya', type:'2d', cv:'福山润', source:'女神异闻录5', bio:'心之怪盗团的首领，代号Joker。', img:'', added:Date.now()-10000 },
+      { id:3, name:'宫崎英高', nameEn:'Hidetaka Miyazaki', type:'3d', works:'黑暗之魂、血源诅咒、艾尔登法环', bio:'FromSoftware社长，魂系列之父。', img:'', added:Date.now()-20000 },
+    ]);
+  }
+}
+
+// ===================== PARTICLES =====================
+function createParticles() {
+  const container = document.getElementById('particles');
+  const icons = ['🎮','🕹️','👾','🎯','🏆','⭐','🗡️','🛡️','💎','🎲','🎧','🎬'];
+  for (let i = 0; i < 20; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    el.textContent = icons[Math.floor(Math.random() * icons.length)];
+    el.style.left = Math.random() * 100 + '%';
+    el.style.top = Math.random() * 100 + '%';
+    el.style.animationDelay = Math.random() * 20 + 's';
+    el.style.animationDuration = (15 + Math.random() * 15) + 's';
+    container.appendChild(el);
+  }
+}
+
+// ===================== NAVIGATION =====================
+let currentSection = 'home';
+function showSection(id, el) {
+  currentSection = id;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.detail-page').forEach(d => d.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('navLinks').classList.remove('open');
+  window.scrollTo(0,0);
+  if (id === 'binggn') { renderGnList(); updateGnFilter(); }
+  if (id === 'bingga') renderGaList();
+  if (id === 'chars') renderCharList();
+  if (id === 'home') renderHome();
+}
+function toggleMobileMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ===================== AVATAR & BG =====================
+function uploadAvatar(input, imgId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(imgId).src = e.target.result;
+    const s = getSettings(); s.avatar = e.target.result; setSettings(s);
+    showToast('头像已更新');
+  };
+  reader.readAsDataURL(file);
+}
+function uploadBg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('bg-layer').style.backgroundImage = 'url(' + e.target.result + ')';
+    const s = getSettings(); s.bg = e.target.result; setSettings(s);
+    showToast('背景已更新');
+  };
+  reader.readAsDataURL(file);
+}
+function loadSettings() {
+  const s = getSettings();
+  if (s.avatar) document.getElementById('mainAvatar').src = s.avatar;
+  if (s.bg) document.getElementById('bg-layer').style.backgroundImage = 'url(' + s.bg + ')';
+  if (s.bio) document.getElementById('userBio').textContent = s.bio;
+}
+
+// ===================== BIO EDIT =====================
+let editingBio = false;
+function toggleEditBio() {
+  const bio = document.getElementById('userBio');
+  const btn = document.getElementById('editBioBtn');
+  editingBio = !editingBio;
+  bio.contentEditable = editingBio;
+  if (editingBio) { bio.focus(); btn.textContent = '💾 保存简介'; }
+  else { saveBio(); btn.textContent = '✏️ 编辑简介'; }
+}
+function saveBio() {
+  const bio = document.getElementById('userBio').textContent;
+  const s = getSettings(); s.bio = bio; setSettings(s);
+  if (editingBio) showToast('简介已保存');
+}
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===================== MODAL =====================
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); resetModal(id); }
+function resetModal(id) {
+  if (id === 'gnModal') {
+    document.getElementById('gnModalTitle').textContent = '添加游戏';
+    document.getElementById('gnImgPreview').classList.remove('show');
+    document.getElementById('gnImgPreview').src = '';
+    document.getElementById('gnImgInput').value = '';
+    ['gnName','gnNameEn','gnDate','gnDev','gnIp','gnTags','gnScore','gnReview'].forEach(i => document.getElementById(i).value = '');
+    editingGnId = null;
+  }
+  if (id === 'gaModal') {
+    document.getElementById('gaModalTitle').textContent = '添加奖项';
+    document.getElementById('gaImgPreview').classList.remove('show');
+    document.getElementById('gaImgPreview').src = '';
+    document.getElementById('gaImgInput').value = '';
+    ['gaName','gaNameEn','gaPrize','gaScore'].forEach(i => document.getElementById(i).value = '');
+    editingGaId = null;
+  }
+  if (id === 'charModal') {
+    document.getElementById('charModalTitle').textContent = '添加人物';
+    document.getElementById('charImgPreview').classList.remove('show');
+    document.getElementById('charImgPreview').src = '';
+    document.getElementById('charImgInput').value = '';
+    ['charName','charNameEn','charCv','charSource','charWorks','charBio'].forEach(i => document.getElementById(i).value = '');
+    editingCharId = null;
+  }
+  if (id === 'gaListModal') {
+    document.getElementById('gaListName').value = '';
+  }
+}
+function previewImg(input, previewId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(previewId);
+    img.src = e.target.result; img.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===================== 饼GN =====================
+let gnPage = 1;
+const gnPerPage = 25;
+let editingGnId = null;
+let currentGn = null;
+
+function openGnModal() { openModal('gnModal'); }
+
+function saveGn() {
+  const name = document.getElementById('gnName').value.trim();
+  if (!name) { showToast('请输入游戏中文名'); return; }
+  const games = getData(STORAGE_KEYS.games);
+  const imgPreview = document.getElementById('gnImgPreview').src;
+  const hasNewImg = imgPreview && imgPreview !== window.location.href && !imgPreview.endsWith('#');
+
+  const data = {
+    id: editingGnId || Date.now(),
+    name, nameEn: document.getElementById('gnNameEn').value.trim(),
+    date: document.getElementById('gnDate').value,
+    dev: document.getElementById('gnDev').value.trim(),
+    ip: document.getElementById('gnIp').value.trim(),
+    tags: document.getElementById('gnTags').value.split(/[,，]/).map(t=>t.trim()).filter(Boolean),
+    score: parseInt(document.getElementById('gnScore').value) || 0,
+    review: document.getElementById('gnReview').value.trim(),
+    img: hasNewImg ? imgPreview : (editingGnId ? (games.find(g=>g.id===editingGnId)?.img||'') : ''),
+    added: editingGnId ? (games.find(g=>g.id===editingGnId)?.added||Date.now()) : Date.now()
+  };
+
+  if (editingGnId) {
+    const idx = games.findIndex(g => g.id === editingGnId);
+    if (idx >= 0) games[idx] = data;
+  } else {
+    games.push(data);
+  }
+  setData(STORAGE_KEYS.games, games);
+  closeModal('gnModal');
+  showToast(editingGnId ? '游戏已更新' : '游戏已添加');
+  renderGnList(); renderHome();
+}
+
+function getFilteredGames() {
+  let games = [...getData(STORAGE_KEYS.games)];
+  const search = document.getElementById('gnSearch').value.trim().toLowerCase();
+  const filterType = document.getElementById('gnFilterType').value;
+  const filterVal = document.getElementById('gnFilterValue').value;
+
+  if (search) games = games.filter(g => g.name.toLowerCase().includes(search) || (g.nameEn||'').toLowerCase().includes(search));
+  if (filterType && filterVal) {
+    if (filterType === 'dev') games = games.filter(g => g.dev === filterVal);
+    if (filterType === 'ip') games = games.filter(g => g.ip === filterVal);
+    if (filterType === 'tag') games = games.filter(g => g.tags.includes(filterVal));
+    if (filterType === 'year') games = games.filter(g => g.date && g.date.startsWith(filterVal));
+  }
+
+  const sort = document.getElementById('gnSort').value;
+  if (sort === 'score-desc') games.sort((a,b) => b.score - a.score);
+  if (sort === 'score-asc') games.sort((a,b) => a.score - b.score);
+  if (sort === 'time-desc') games.sort((a,b) => b.added - a.added);
+  if (sort === 'time-asc') games.sort((a,b) => a.added - b.added);
+
+  return games;
+}
+
+function renderGnList() {
+  const games = getFilteredGames();
+  const total = Math.ceil(games.length / gnPerPage) || 1;
+  if (gnPage > total) gnPage = total;
+  const start = (gnPage - 1) * gnPerPage;
+  const pageGames = games.slice(start, start + gnPerPage);
+
+  const container = document.getElementById('gnList');
+  if (pageGames.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🎮</div><div>暂无游戏记录，点击上方按钮添加</div></div>';
+  } else {
+    container.innerHTML = pageGames.map(g => {
+      const imgSrc = g.img || 'https://placehold.co/400x240/4A90D9/ffffff?text=' + encodeURIComponent(g.name);
+      return '<div class="card" onclick="openGnDetail(' + g.id + ')">' +
+        '<div class="card-img-wrap"><img class="card-img" src="' + imgSrc + '" alt="' + g.name + '"></div>' +
+        '<div class="score-badge">' + g.score + '</div>' +
+        '<div class="card-body"><div class="card-title">' + g.name + '</div>' +
+        '<div class="card-sub">' + (g.nameEn || '') + '</div>' +
+        '<div class="card-meta">' + g.tags.map(t => '<span class="tag">' + t + '</span>').join('') + '</div></div></div>';
+    }).join('');
+  }
+
+  let pages = '';
+  for (let i = 1; i <= total; i++) {
+    pages += '<button class="page-btn ' + (i===gnPage?'active':'') + '" onclick="goGnPage(' + i + ')">' + i + '</button>';
+  }
+  document.getElementById('gnPagination').innerHTML = pages;
+}
+
+function goGnPage(p) { gnPage = p; renderGnList(); window.scrollTo(0,0); }
+
+function updateGnFilter() {
+  const type = document.getElementById('gnFilterType').value;
+  const sel = document.getElementById('gnFilterValue');
+  sel.innerHTML = '<option value="">选择分类值</option>';
+  if (!type) { renderGnList(); return; }
+  const games = getData(STORAGE_KEYS.games);
+  let values = new Set();
+  games.forEach(g => {
+    if (type === 'dev' && g.dev) values.add(g.dev);
+    if (type === 'ip' && g.ip) values.add(g.ip);
+    if (type === 'tag') g.tags.forEach(t => values.add(t));
+    if (type === 'year' && g.date) values.add(g.date.slice(0,4));
+  });
+  [...values].sort().forEach(v => {
+    sel.innerHTML += '<option value="' + v + '">' + v + '</option>';
+  });
+  renderGnList();
+}
+
+function openGnDetail(id) {
+  const games = getData(STORAGE_KEYS.games);
+  const g = games.find(x => x.id === id);
+  if (!g) return;
+  currentGn = g;
+  document.getElementById('gnDetailImg').src = g.img || 'https://placehold.co/200x200/4A90D9/ffffff?text=' + encodeURIComponent(g.name);
+  document.getElementById('gnDetailName').textContent = g.name;
+  document.getElementById('gnDetailNameEn').textContent = g.nameEn || '';
+  document.getElementById('gnDetailDate').textContent = g.date || '未知';
+  document.getElementById('gnDetailDev').textContent = g.dev || '未知';
+  document.getElementById('gnDetailIp').textContent = g.ip || '未知';
+  document.getElementById('gnDetailTags').innerHTML = g.tags.map(t => '<span class="tag">' + t + '</span>').join(' ');
+  document.getElementById('gnDetailScore').textContent = g.score;
+  document.getElementById('gnDetailReview').textContent = g.review || '暂无评价';
+
+  document.getElementById('binggn').classList.remove('active');
+  document.getElementById('gnDetail').classList.add('active');
+  window.scrollTo(0,0);
+}
+function backToGnList() {
+  document.getElementById('gnDetail').classList.remove('active');
+  document.getElementById('binggn').classList.add('active');
+  renderGnList();
+}
+function editCurrentGn() {
+  if (!currentGn) return;
+  editingGnId = currentGn.id;
+  document.getElementById('gnModalTitle').textContent = '编辑游戏';
+  document.getElementById('gnName').value = currentGn.name;
+  document.getElementById('gnNameEn').value = currentGn.nameEn || '';
+  document.getElementById('gnDate').value = currentGn.date || '';
+  document.getElementById('gnDev').value = currentGn.dev || '';
+  document.getElementById('gnIp').value = currentGn.ip || '';
+  document.getElementById('gnTags').value = (currentGn.tags || []).join(', ');
+  document.getElementById('gnScore').value = currentGn.score || '';
+  document.getElementById('gnReview').value = currentGn.review || '';
+  if (currentGn.img) {
+    document.getElementById('gnImgPreview').src = currentGn.img;
+    document.getElementById('gnImgPreview').classList.add('show');
+  }
+  openModal('gnModal');
+}
+function deleteCurrentGn() {
+  if (!currentGn) return;
+  if (!confirm('确定要删除这款游戏吗？')) return;
+  let games = getData(STORAGE_KEYS.games);
+  games = games.filter(g => g.id !== currentGn.id);
+  setData(STORAGE_KEYS.games, games);
+  showToast('游戏已删除'); backToGnList();
+}
+
+// ===================== 饼GA =====================
+let editingGaId = null;
+let currentGa = null;
+
+function renderGaList() {
+  const lists = getData(STORAGE_KEYS.awardLists);
+  const awards = getData(STORAGE_KEYS.awards);
+  const container = document.getElementById('gaContainer');
+
+  if (lists.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🏆</div><div>暂无奖项列表，点击上方按钮创建</div></div>';
+    return;
+  }
+
+  container.innerHTML = lists.map(list => {
+    const listAwards = awards.filter(a => a.listId === list.id);
+    return '<div class="award-section">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">' +
+      '<h3 class="award-title">' + list.name + '</h3>' +
+      '<div style="display:flex; gap:8px;">' +
+      '<button class="btn-primary" style="padding:6px 14px; font-size:0.85rem;" onclick="openGaModal(' + list.id + ')">➕ 添加奖项</button>' +
+      '<button class="btn-secondary" style="padding:6px 14px; font-size:0.85rem; color:var(--text-mid);" onclick="deleteGaList(' + list.id + ')">🗑️</button>' +
+      '</div></div>' +
+      (listAwards.length === 0 ? '<div style="color:rgba(255,255,255,0.4); padding:20px;">该列表暂无奖项</div>' :
+      '<div class="award-grid">' + listAwards.map(a => {
+        const imgSrc = a.img || 'https://placehold.co/400x240/5B8DEF/ffffff?text=' + encodeURIComponent(a.name);
+        return '<div class="award-card" onclick="openGaDetail(' + a.id + ')">' +
+          '<img class="award-img" src="' + imgSrc + '" alt="' + a.name + '">' +
+          '<div class="award-body"><div class="award-name">' + a.name + '</div>' +
+          '<div class="award-prize">🏆 ' + a.prize + '</div></div></div>';
+      }).join('') + '</div>') + '</div>';
+  }).join('');
+}
+
+function openGaListModal() { openModal('gaListModal'); }
+function createGaList() {
+  const name = document.getElementById('gaListName').value.trim();
+  if (!name) { showToast('请输入列表名称'); return; }
+  const lists = getData(STORAGE_KEYS.awardLists);
+  lists.push({ id: Date.now(), name });
+  setData(STORAGE_KEYS.awardLists, lists);
+  closeModal('gaListModal');
+  showToast('奖项列表已创建');
+  renderGaList();
+}
+function deleteGaList(id) {
+  if (!confirm('确定删除该奖项列表及其所有奖项吗？')) return;
+  let lists = getData(STORAGE_KEYS.awardLists);
+  let awards = getData(STORAGE_KEYS.awards);
+  lists = lists.filter(l => l.id !== id);
+  awards = awards.filter(a => a.listId !== id);
+  setData(STORAGE_KEYS.awardLists, lists);
+  setData(STORAGE_KEYS.awards, awards);
+  showToast('奖项列表已删除');
+  renderGaList();
+}
+
+function openGaModal(listId) {
+  const lists = getData(STORAGE_KEYS.awardLists);
+  const sel = document.getElementById('gaListSelect');
+  sel.innerHTML = lists.map(l => '<option value="' + l.id + '"' + (l.id===listId?' selected':'') + '>' + l.name + '</option>').join('');
+  openModal('gaModal');
+}
+function saveGa() {
+  const name = document.getElementById('gaName').value.trim();
+  const prize = document.getElementById('gaPrize').value.trim();
+  if (!name || !prize) { showToast('请填写完整信息'); return; }
+  const awards = getData(STORAGE_KEYS.awards);
+  const imgPreview = document.getElementById('gaImgPreview').src;
+  const hasNewImg = imgPreview && imgPreview !== window.location.href && !imgPreview.endsWith('#');
+
+  const data = {
+    id: editingGaId || Date.now(),
+    listId: parseInt(document.getElementById('gaListSelect').value),
+    name, nameEn: document.getElementById('gaNameEn').value.trim(),
+    prize, score: parseInt(document.getElementById('gaScore').value) || 0,
+    img: hasNewImg ? imgPreview : (editingGaId ? (awards.find(a=>a.id===editingGaId)?.img||'') : '')
+  };
+
+  if (editingGaId) {
+    const idx = awards.findIndex(a => a.id === editingGaId);
+    if (idx >= 0) awards[idx] = data;
+  } else {
+    awards.push(data);
+  }
+  setData(STORAGE_KEYS.awards, awards);
+  closeModal('gaModal');
+  showToast(editingGaId ? '奖项已更新' : '奖项已添加');
+  renderGaList(); renderHome();
+}
+function openGaDetail(id) {
+  const awards = getData(STORAGE_KEYS.awards);
+  const a = awards.find(x => x.id === id);
+  if (!a) return;
+  currentGa = a;
+  document.getElementById('gaDetailImg').src = a.img || 'https://placehold.co/200x200/5B8DEF/ffffff?text=' + encodeURIComponent(a.name);
+  document.getElementById('gaDetailGame').textContent = a.name;
+  document.getElementById('gaDetailGameEn').textContent = a.nameEn || '';
+  document.getElementById('gaDetailPrize').textContent = '🏆 ' + a.prize;
+  document.getElementById('gaDetailScore').textContent = a.score || '暂无';
+
+  document.getElementById('bingga').classList.remove('active');
+  document.getElementById('gaDetail').classList.add('active');
+  window.scrollTo(0,0);
+}
+function backToGaList() {
+  document.getElementById('gaDetail').classList.remove('active');
+  document.getElementById('bingga').classList.add('active');
+  renderGaList();
+}
+function editCurrentGa() {
+  if (!currentGa) return;
+  editingGaId = currentGa.id;
+  document.getElementById('gaModalTitle').textContent = '编辑奖项';
+  const lists = getData(STORAGE_KEYS.awardLists);
+  const sel = document.getElementById('gaListSelect');
+  sel.innerHTML = lists.map(l => '<option value="' + l.id + '"' + (l.id===currentGa.listId?' selected':'') + '>' + l.name + '</option>').join('');
+  document.getElementById('gaName').value = currentGa.name;
+  document.getElementById('gaNameEn').value = currentGa.nameEn || '';
+  document.getElementById('gaPrize').value = currentGa.prize;
+  document.getElementById('gaScore').value = currentGa.score || '';
+  if (currentGa.img) {
+    document.getElementById('gaImgPreview').src = currentGa.img;
+    document.getElementById('gaImgPreview').classList.add('show');
+  }
+  openModal('gaModal');
+}
+function deleteCurrentGa() {
+  if (!currentGa) return;
+  if (!confirm('确定要删除该奖项吗？')) return;
+  let awards = getData(STORAGE_KEYS.awards);
+  awards = awards.filter(a => a.id !== currentGa.id);
+  setData(STORAGE_KEYS.awards, awards);
+  showToast('奖项已删除'); backToGaList();
+}
+
+// ===================== 人物收藏 =====================
+let charTab = '2d';
+let charPage = 1;
+const charPerPage = 25;
+let editingCharId = null;
+let currentChar = null;
+
+function switchCharTab(type, btn) {
+  charTab = type; charPage = 1;
+  document.querySelectorAll('.char-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderCharList();
+}
+
+function openCharModal() { openModal('charModal'); }
+
+function toggleCharFields() {
+  const type = document.getElementById('charType').value;
+  document.getElementById('charCvGroup').style.display = type === '2d' ? 'block' : 'none';
+  document.getElementById('charSourceGroup').style.display = type === '2d' ? 'block' : 'none';
+  document.getElementById('charWorksGroup').style.display = type === '3d' ? 'block' : 'none';
+}
+
+function saveChar() {
+  const name = document.getElementById('charName').value.trim();
+  if (!name) { showToast('请输入人物中文名'); return; }
+  const chars = getData(STORAGE_KEYS.chars);
+  const imgPreview = document.getElementById('charImgPreview').src;
+  const hasNewImg = imgPreview && imgPreview !== window.location.href && !imgPreview.endsWith('#');
+  const type = document.getElementById('charType').value;
+
+  const data = {
+    id: editingCharId || Date.now(),
+    name, nameEn: document.getElementById('charNameEn').value.trim(),
+    type,
+    cv: type === '2d' ? document.getElementById('charCv').value.trim() : '',
+    source: type === '2d' ? document.getElementById('charSource').value.trim() : '',
+    works: type === '3d' ? document.getElementById('charWorks').value.trim() : '',
+    bio: document.getElementById('charBio').value.trim(),
+    img: hasNewImg ? imgPreview : (editingCharId ? (chars.find(c=>c.id===editingCharId)?.img||'') : ''),
+    added: editingCharId ? (chars.find(c=>c.id===editingCharId)?.added||Date.now()) : Date.now()
+  };
+
+  if (editingCharId) {
+    const idx = chars.findIndex(c => c.id === editingCharId);
+    if (idx >= 0) chars[idx] = data;
+  } else {
+    chars.push(data);
+  }
+  setData(STORAGE_KEYS.chars, chars);
+  closeModal('charModal');
+  showToast(editingCharId ? '人物已更新' : '人物已添加');
+  renderCharList(); renderHome();
+}
+
+function getFilteredChars() {
+  let chars = getData(STORAGE_KEYS.chars).filter(c => c.type === charTab);
+  const search = document.getElementById('charSearch').value.trim().toLowerCase();
+  if (search) chars = chars.filter(c => c.name.toLowerCase().includes(search) || (c.nameEn||'').toLowerCase().includes(search));
+  return chars;
+}
+
+function renderCharList() {
+  const chars = getFilteredChars();
+  const total = Math.ceil(chars.length / charPerPage) || 1;
+  if (charPage > total) charPage = total;
+  const start = (charPage - 1) * charPerPage;
+  const pageChars = chars.slice(start, start + charPerPage);
+
+  const container = document.getElementById('charList');
+  if (pageChars.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><div>暂无人物记录，点击上方按钮添加</div></div>';
+  } else {
+    container.innerHTML = pageChars.map(c => {
+      const imgSrc = c.img || 'https://placehold.co/400x240/4A90D9/ffffff?text=' + encodeURIComponent(c.name);
+      const extra = c.type === '2d' ? (c.source ? '出自：' + c.source : '') : (c.works ? '代表作：' + c.works : '');
+      return '<div class="card" onclick="openCharDetail(' + c.id + ')">' +
+        '<div class="card-img-wrap"><img class="card-img" src="' + imgSrc + '" alt="' + c.name + '"></div>' +
+        '<div class="card-body"><div class="card-title">' + c.name + '</div>' +
+        '<div class="card-sub">' + (c.nameEn || '') + '</div>' +
+        '<div class="card-meta">' + (extra ? '<span class="tag">' + extra + '</span>' : '') + '</div></div></div>';
+    }).join('');
+  }
+
+  let pages = '';
+  for (let i = 1; i <= total; i++) {
+    pages += '<button class="page-btn ' + (i===charPage?'active':'') + '" onclick="goCharPage(' + i + ')">' + i + '</button>';
+  }
+  document.getElementById('charPagination').innerHTML = pages;
+}
+
+function goCharPage(p) { charPage = p; renderCharList(); window.scrollTo(0,0); }
+
+function openCharDetail(id) {
+  const chars = getData(STORAGE_KEYS.chars);
+  const c = chars.find(x => x.id === id);
+  if (!c) return;
+  currentChar = c;
+  document.getElementById('charDetailImg').src = c.img || 'https://placehold.co/200x200/4A90D9/ffffff?text=' + encodeURIComponent(c.name);
+  document.getElementById('charDetailName').textContent = c.name;
+  document.getElementById('charDetailNameEn').textContent = c.nameEn || '';
+
+  let extraHtml = '';
+  if (c.type === '2d') {
+    extraHtml = '<div class="detail-row"><span class="detail-label">声优:</span><span class="detail-value">' + (c.cv || '未知') + '</span></div>' +
+      '<div class="detail-row"><span class="detail-label">出处:</span><span class="detail-value">' + (c.source || '未知') + '</span></div>';
+  } else {
+    extraHtml = '<div class="detail-row"><span class="detail-label">代表作:</span><span class="detail-value">' + (c.works || '未知') + '</span></div>';
+  }
+  document.getElementById('charDetailExtra').innerHTML = extraHtml;
+  document.getElementById('charDetailBio').textContent = c.bio || '暂无简介';
+
+  document.getElementById('chars').classList.remove('active');
+  document.getElementById('charDetail').classList.add('active');
+  window.scrollTo(0,0);
+}
+function backToCharList() {
+  document.getElementById('charDetail').classList.remove('active');
+  document.getElementById('chars').classList.add('active');
+  renderCharList();
+}
+function editCurrentChar() {
+  if (!currentChar) return;
+  editingCharId = currentChar.id;
+  document.getElementById('charModalTitle').textContent = '编辑人物';
+  document.getElementById('charName').value = currentChar.name;
+  document.getElementById('charNameEn').value = currentChar.nameEn || '';
+  document.getElementById('charType').value = currentChar.type;
+  toggleCharFields();
+  document.getElementById('charCv').value = currentChar.cv || '';
+  document.getElementById('charSource').value = currentChar.source || '';
+  document.getElementById('charWorks').value = currentChar.works || '';
+  document.getElementById('charBio').value = currentChar.bio || '';
+  if (currentChar.img) {
+    document.getElementById('charImgPreview').src = currentChar.img;
+    document.getElementById('charImgPreview').classList.add('show');
+  }
+  openModal('charModal');
+}
+function deleteCurrentChar() {
+  if (!currentChar) return;
+  if (!confirm('确定要删除该人物吗？')) return;
+  let chars = getData(STORAGE_KEYS.chars);
+  chars = chars.filter(c => c.id !== currentChar.id);
+  setData(STORAGE_KEYS.chars, chars);
+  showToast('人物已删除'); backToCharList();
+}
+
+// ===================== HOME =====================
+function renderHome() {
+  const games = getData(STORAGE_KEYS.games).sort((a,b) => b.added - a.added).slice(0, 4);
+  const awards = getData(STORAGE_KEYS.awards).slice(-4).reverse();
+
+  const gContainer = document.getElementById('homeRecentGames');
+  if (games.length === 0) {
+    gContainer.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="icon">🎮</div><div>暂无游戏</div></div>';
+  } else {
+    gContainer.innerHTML = games.map(g => {
+      const imgSrc = g.img || 'https://placehold.co/400x240/4A90D9/ffffff?text=' + encodeURIComponent(g.name);
+      return '<div class="card" onclick="showSection('binggn', null); openGnDetail(' + g.id + ')">' +
+        '<div class="card-img-wrap"><img class="card-img" src="' + imgSrc + '" alt="' + g.name + '"></div>' +
+        '<div class="score-badge">' + g.score + '</div>' +
+        '<div class="card-body"><div class="card-title">' + g.name + '</div>' +
+        '<div class="card-sub">' + (g.nameEn || '') + '</div></div></div>';
+    }).join('');
+  }
+
+  const aContainer = document.getElementById('homeRecentAwards');
+  if (awards.length === 0) {
+    aContainer.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="icon">🏆</div><div>暂无奖项</div></div>';
+  } else {
+    aContainer.innerHTML = awards.map(a => {
+      const imgSrc = a.img || 'https://placehold.co/400x240/5B8DEF/ffffff?text=' + encodeURIComponent(a.name);
+      return '<div class="card" onclick="showSection('bingga', null); openGaDetail(' + a.id + ')">' +
+        '<div class="card-img-wrap"><img class="card-img" src="' + imgSrc + '" alt="' + a.name + '"></div>' +
+        '<div class="card-body"><div class="card-title">' + a.name + '</div>' +
+        '<div class="card-sub">🏆 ' + a.prize + '</div></div></div>';
+    }).join('');
+  }
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  initData();
+  loadSettings();
+  createParticles();
+  renderHome();
+});
+</script>
+</body>
+</html>
